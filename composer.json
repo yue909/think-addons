@@ -1,0 +1,19 @@
+{
+    "name": "yuege/lemotest",
+    "license": "mit",
+    "authors": [
+        {
+            "name": "yue909",
+            "email": "994927909@qq.com"
+        }
+    ],
+     "autoload": {
+        "psr-4": {
+            "think\\": "src/"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    },
+    "require": {}
+}
