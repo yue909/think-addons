@@ -1,0 +1,37 @@
+{
+    "name": "lemo/think-addons",
+    "description": "the tp6 addons",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "yue909",
+            "email": "994927909@qq.com"
+        }
+    ],
+     "autoload": {
+        "psr-4": {
+            "think\\": "src/"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    },
+    "extra": {
+        "think": {
+            "services": [
+                "think\\addons\\Service"
+            ]
+        }
+    },
+     "require": {
+        "php": ">=7.1.0",
+        "topthink/framework": "^6.0",
+        "topthink/think-view": "^1.0",
+        "topthink/think-helper": "^3.0.0"
+    },
+     "scripts" : {
+        "post-install-cmd": [
+            "php think addons:config"
+        ]
+    }
+}
