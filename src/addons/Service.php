@@ -224,4 +224,5 @@ class Service extends \think\Service
 
         return $addon->getConfig();
     }
+    
 }

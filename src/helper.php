@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+use think\addons\Service;
+use think\facade\Db;
+use think\facade\App;
+use think\facade\Config;
 use think\facade\Event;
 use think\facade\Route;
 use think\helper\{
@@ -175,3 +179,83 @@ if (!function_exists('addons_url')) {
     }
 }
 
+
+/**
+ * 获得插件列表
+ * @return array
+ */
+if (!function_exists('get_addons_list')) {
+
+    function get_addons_list()
+    {
+        $service = new Service(App::instance()); // 获取service 服务
+        $addons_path = $service->getAddonsPath(); // 插件列表
+        $results = scandir($addons_path);
+        $list = [];
+        foreach ($results as $name) {
+
+            if ($name === '.' or $name === '..')
+                continue;
+            if (is_file($addons_path . $name))
+                continue;
+            $addonDir = $addons_path . $name . DIRECTORY_SEPARATOR;
+            if (!is_dir($addonDir))
+                continue;
+
+            if (!is_file($addonDir . 'Plugin' . '.php'))
+                continue;
+            $addon = get_addons_instance($name);
+            $info = $addon->getInfo($name);
+            if (!isset($info['name']))
+                continue;
+            $info['url'] = addons_url();
+            $list[$name] = $info;
+        }
+        return $list;
+    }
+}
+/**
+ * 导入SQL
+ *
+ * @param string $name 插件名称
+ * @return  boolean
+ */
+if (!function_exists('importsql')) {
+
+    function importsql($name)
+    {
+        $service = new Service(App::instance()); // 获取service 服务
+        $addons_path = $service->getAddonsPath(); // 插件列表
+        $sqlFile = $addons_path. $name . DIRECTORY_SEPARATOR . 'install.sql';
+        if (is_file($sqlFile)) {
+            $sql = file_get_contents($sqlFile);
+            $sql = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $sql);
+//            var_dump($sql);die;
+            try {
+                Db::execute($sql);
+            } catch (\PDOException $e) {
+                throw  new PDOException($e->getMessage());
+            }
+//            $lines = file($sqlFile);
+//            var_dump($lines);
+//            $templine = '';
+//            foreach ($lines as $line) {
+//                if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*')
+//                    continue;
+//
+//                $templine .= $line;
+//                if (substr(trim($line), -1, 1) == ';') {
+//                    $templine = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $templine);
+//                    $templine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $templine);
+//                    try {
+//                        Db::getPdo()->execute($templine);
+//                    } catch (\PDOException $e) {
+//                        throw  new PDOException($e->getMessage());
+//                    }
+//                    $templine = '';
+//                }
+//            }
+        }
+        return true;
+    }
+}
