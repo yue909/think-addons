@@ -230,7 +230,6 @@ if (!function_exists('importsql')) {
         if (is_file($sqlFile)) {
             $sql = file_get_contents($sqlFile);
             $sql = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $sql);
-//            var_dump($sql);die;
             try {
                 Db::execute($sql);
             } catch (\PDOException $e) {
