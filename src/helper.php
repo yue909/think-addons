@@ -233,27 +233,8 @@ if (!function_exists('importsql')) {
             try {
                 Db::execute($sql);
             } catch (\PDOException $e) {
-                throw  new PDOException($e->getMessage());
+                throw new PDOException($e->getMessage());
             }
-//            $lines = file($sqlFile);
-//            var_dump($lines);
-//            $templine = '';
-//            foreach ($lines as $line) {
-//                if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*')
-//                    continue;
-//
-//                $templine .= $line;
-//                if (substr(trim($line), -1, 1) == ';') {
-//                    $templine = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $templine);
-//                    $templine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $templine);
-//                    try {
-//                        Db::getPdo()->execute($templine);
-//                    } catch (\PDOException $e) {
-//                        throw  new PDOException($e->getMessage());
-//                    }
-//                    $templine = '';
-//                }
-//            }
         }
         return true;
     }
