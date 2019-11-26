@@ -1,14 +1,11 @@
 <?php
 
 declare(strict_types=1);
-
 namespace think;
-
 use think\App;
 use think\helper\Str;
 use think\facade\Config;
 use think\facade\View;
-
 abstract class Addons
 {
     // app 容器
@@ -25,7 +22,6 @@ abstract class Addons
     protected $addon_config;
     // 插件信息
     protected $addon_info;
-
     /**
      * 插件构造函数
      * Addons constructor.
@@ -43,15 +39,12 @@ abstract class Addons
         $this->view->config([
             'view_path' => $this->addon_path . 'view' . DIRECTORY_SEPARATOR
         ]);
-
         // 控制器初始化
         $this->initialize();
     }
-
     // 初始化
     protected function initialize()
     {}
-
     /**
      * 获取插件标识
      * @return mixed|null
@@ -61,10 +54,8 @@ abstract class Addons
         $class = get_class($this);
         list(, $name, ) = explode('\\', $class);
         $this->request->addon = $name;
-
         return $name;
     }
-
     /**
      * 加载模板输出
      * @param string $template
@@ -76,7 +67,6 @@ abstract class Addons
     {
         return $this->view->fetch($template, $vars);
     }
-
     /**
      * 渲染内容输出
      * @access protected
@@ -88,7 +78,6 @@ abstract class Addons
     {
         return $this->view->display($content, $vars);
     }
-
     /**
      * 模板变量赋值
      * @access protected
@@ -99,10 +88,8 @@ abstract class Addons
     protected function assign($name, $value = '')
     {
         $this->view->assign([$name => $value]);
-
         return $this;
     }
-
     /**
      * 初始化模板引擎
      * @access protected
@@ -112,10 +99,8 @@ abstract class Addons
     protected function engine($engine)
     {
         $this->view->engine($engine);
-
         return $this;
     }
-
     /**
      * 插件基础信息
      * @return array
@@ -126,7 +111,6 @@ abstract class Addons
         if ($info) {
             return $info;
         }
-
         // 文件属性
         $info = $this->info ?? [];
         // 文件配置
@@ -137,10 +121,8 @@ abstract class Addons
             $info = array_merge($_info, $info);
         }
         Config::set($info, $this->addon_info);
-
         return isset($info) ? $info : [];
     }
-
     /**
      * 获取配置信息
      * @param bool $type 是否获取完整配置
@@ -164,13 +146,10 @@ abstract class Addons
             unset($temp_arr);
         }
         Config::set($config, $this->addon_config);
-
         return $config;
     }
-
     //必须实现安装
     abstract public function install();
-
     //必须卸载插件方法
     abstract public function uninstall();
 }
