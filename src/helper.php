@@ -135,6 +135,24 @@ if (!function_exists('get_addons_class')) {
     }
 }
 
+
+if (!function_exists('get_addons_config')) {
+    /**
+     * 获取插件的配置
+     * @param string $name 插件名
+     * @return mixed|null
+     */
+    function get_addons_config($name)
+    {
+        $addon = get_addons_instance($name);
+        if (! $addon) {
+            return [];
+        }
+
+        return $addon->getConfig($name);
+    }
+}
+
 if (!function_exists('addons_url')) {
     /**
      * 插件显示内容里生成访问插件的url
