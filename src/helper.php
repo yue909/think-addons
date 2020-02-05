@@ -246,12 +246,61 @@ if (!function_exists('importsql')) {
         $addons_path = $service->getAddonsPath(); // 插件列表
         $sqlFile = $addons_path. $name . DIRECTORY_SEPARATOR . 'install.sql';
         if (is_file($sqlFile)) {
-            $sql = file_get_contents($sqlFile);
-            $sql = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $sql);
-            try {
-                Db::execute($sql);
-            } catch (\PDOException $e) {
-                throw new PDOException($e->getMessage());
+            $lines = file($sqlFile);
+            $templine = '';
+            foreach ($lines as $line) {
+                if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*')
+                    continue;
+
+                $templine .= $line;
+                if (substr(trim($line), -1, 1) == ';') {
+                    $templine = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $templine);
+                    $templine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $templine);
+                    try {
+                        Db::query($templine);
+                    } catch (\PDOException $e) {
+                        throw new PDOException($e->getMessage());
+
+                    }
+                    $templine = '';
+                }
+            }
+           
+        }
+        return true;
+    }
+}
+
+/**
+ * 卸载SQL
+ *
+ * @param string $name 插件名称
+ * @return  boolean
+ */
+if (!function_exists('uninstallsql')) {
+
+    function uninstallsql($name)
+    {
+        $service = new Service(App::instance()); // 获取service 服务
+        $addons_path = $service->getAddonsPath(); // 插件列表
+        $sqlFile = $addons_path. $name . DIRECTORY_SEPARATOR . 'uninstall.sql';
+        if (is_file($sqlFile)) {
+            $lines = file($sqlFile);
+            $templine = '';
+            foreach ($lines as $line) {
+                if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*')
+                    continue;
+                $templine .= $line;
+                if (substr(trim($line), -1, 1) == ';') {
+                    $templine = str_ireplace('__PREFIX__', config('database.connections.mysql.prefix'), $templine);
+                    try {
+                        Db::query($templine);
+                    } catch (\PDOException $e) {
+                        throw new PDOException($e->getMessage());
+
+                    }
+                    $templine = '';
+                }
             }
         }
         return true;
