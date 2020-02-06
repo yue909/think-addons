@@ -173,4 +173,8 @@ abstract class Addons
 
     //必须卸载插件方法
     abstract public function uninstall();
+    //必须实现安装
+    abstract public function enabled();
+    //必须卸载插件方法
+    abstract public function disabled();
 }

@@ -117,9 +117,9 @@ if (!function_exists('get_addons_class')) {
         // 处理多级控制器情况
         if (!is_null($class) && strpos($class, '.')) {
             $class = explode('.', $class);
-
             $class[count($class) - 1] = Str::studly(end($class));
             $class = implode('\\', $class);
+
         } else {
             $class = Str::studly(is_null($class) ? $name : $class);
         }
@@ -205,31 +205,104 @@ if (!function_exists('addons_url')) {
 if (!function_exists('get_addons_list')) {
 
     function get_addons_list()
-    {
-        $service = new Service(App::instance()); // 获取service 服务
-        $addons_path = $service->getAddonsPath(); // 插件列表
-        $results = scandir($addons_path);
-        $list = [];
-        foreach ($results as $name) {
+    {   
+        if(!session('addonslist')){
+            $service = new Service(App::instance()); // 获取service 服务
+            $addons_path = $service->getAddonsPath(); // 插件列表
+            $results = scandir($addons_path);
+            $list = [];
+            foreach ($results as $name) {
 
-            if ($name === '.' or $name === '..')
-                continue;
-            if (is_file($addons_path . $name))
-                continue;
-            $addonDir = $addons_path . $name . DIRECTORY_SEPARATOR;
-            if (!is_dir($addonDir))
-                continue;
+                if ($name === '.' or $name === '..')
+                    continue;
+                if (is_file($addons_path . $name))
+                    continue;
+                $addonDir = $addons_path . $name . DIRECTORY_SEPARATOR;
+                if (!is_dir($addonDir))
+                    continue;
 
-            if (!is_file($addonDir . 'Plugin' . '.php'))
-                continue;
-            $addon = get_addons_instance($name);
-            $info = $addon->getInfo($name);
-            if (!isset($info['name']))
-                continue;
-            $info['url'] = addons_url();
-            $list[$name] = $info;
+                if (!is_file($addonDir . 'Plugin' . '.php'))
+                    continue;
+                $addon = get_addons_instance($name);
+                $info = $addon->getInfo($name);
+                if (!isset($info['name']))
+                    continue;
+                $info['url'] = addons_url();
+                $list[$name] = $info;
+                session('addonslist',$list);
+            }
+        }else{
+            $list = session('addonslist')  ;
         }
+        
         return $list;
+    }
+}
+
+
+
+/**
+ * 获得插件自动加载的配置
+ * @param bool $chunk 是否清除手动配置的钩子
+ * @return array
+ */
+if (!function_exists('get_addons_autoload_config')) {
+
+    function get_addons_autoload_config($chunk = false)
+    {
+        // 读取addons的配置
+        $config = (array)Config::get('addons');
+        if ($chunk) {
+            // 清空手动配置的钩子
+            $config['hooks'] = [];
+        }
+        $route = [];
+        // 读取插件目录及钩子列表
+        $base = get_class_methods("\\think\\Addons");
+        $base = array_merge($base, ['install', 'uninstall', 'enabled', 'disabled']);
+
+        $url_domain_deploy = Config::get('route.url_domain_deploy');
+        $addons = get_addons_list();
+        $domain = [];
+        foreach ($addons as $name => $addon) {
+            if (!$addon['status'])
+                continue;
+            // 读取出所有公共方法
+            $methods = (array)get_class_methods("\\addons\\" . $name . "\\" . 'Plugin');
+            // 跟插件基类方法做比对，得到差异结果
+            $hooks = array_diff($methods, $base);
+            // 循环将钩子方法写入配置中
+            foreach ($hooks as $hook) {
+                $hook = Str::studly($hook);
+                if (!isset($config['hooks'][$hook])) {
+                    $config['hooks'][$hook] = [];
+                }
+                // 兼容手动配置项
+                if (is_string($config['hooks'][$hook])) {
+                    $config['hooks'][$hook] = explode(',', $config['hooks'][$hook]);
+                }
+                if (!in_array($name, $config['hooks'][$hook])) {
+                    $config['hooks'][$hook][] = $name;
+                }
+            }
+            $conf = get_addons_config($addon['name']);
+            if ($conf) {
+                $conf['rewrite'] = isset($conf['rewrite']) && is_array($conf['rewrite']) ? $conf['rewrite'] : [];
+                $rule =  $conf['rewrite']['value'] ;
+                if ($url_domain_deploy && isset($conf['domain']) && $conf['domain']) {
+                    $domain[] = [
+                        'addons' => $addon['name'],
+                        'indomain' => $conf['indomain'],
+                        'rule' => $rule
+                    ];
+                } else {
+                    $route = array_merge($route, $rule);
+                }
+            }
+        }
+        $config['route'] = $route;
+        $config['route'] = array_merge($config['route'], $domain);
+        return $config;
     }
 }
 /**
@@ -270,6 +343,8 @@ if (!function_exists('importsql')) {
         return true;
     }
 }
+
+
 
 /**
  * 卸载SQL

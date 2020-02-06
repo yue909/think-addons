@@ -22,13 +22,16 @@ class Route
     {
         $app = app();
         $request = $app->request;
-
+        // 是否自动转换控制器和操作名
+        $convert = Config::get('route.url_convert');
+        $filter = $convert ? 'strtolower' : 'trim';
+        $addon = $addon ? trim(call_user_func($filter, $addon)) : '';
+        $controller = $controller ? trim(call_user_func($filter, $controller)) : 'index';
+        $action = $action ? trim(call_user_func($filter, $action)) : 'index';
         Event::trigger('addons_begin', $request);
-
         if (empty($addon) || empty($controller) || empty($action)) {
             throw new HttpException(500, lang('addon can not be empty'));
         }
-
         $request->addon = $addon;
         // 设置当前请求的控制器、操作
         $request->setController($controller)->setAction($action);
