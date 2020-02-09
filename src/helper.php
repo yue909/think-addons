@@ -288,7 +288,7 @@ if (!function_exists('get_addons_autoload_config')) {
             $conf = get_addons_config($addon['name']);
             if ($conf) {
                 $conf['rewrite'] = isset($conf['rewrite']) && is_array($conf['rewrite']) ? $conf['rewrite'] : [];
-                $rule =  $conf['rewrite']['value'] ;
+                $rule =  $conf['rewrite']?$conf['rewrite']['value']:[] ;
                 if ($url_domain_deploy && isset($conf['domain']) && $conf['domain']) {
                     $domain[] = [
                         'addons' => $addon['name'],
