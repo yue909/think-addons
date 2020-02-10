@@ -227,7 +227,7 @@ if (!function_exists('get_addons_list')) {
                 $info = $addon->getInfo($name);
                 if (!isset($info['name']))
                     continue;
-                $info['url'] = addons_url();
+                $info['url'] = (string)addons_url();
                 $list[$name] = $info;
                 session('addonslist',$list);
             }
