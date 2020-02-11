@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace think\addons;
 
+use lemo\helper\FileHelper;
+use think\Exception;
 use think\Route;
 use think\helper\Str;
 use think\facade\Config;
@@ -10,7 +12,8 @@ use think\facade\Lang;
 use think\facade\Cache;
 use think\facade\Event;
 use think\addons\middleware\Addons;
-
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 /**
  * 插件服务
  * Class Service
@@ -229,6 +232,127 @@ class Service extends \think\Service
         }
 
         return $addon->getConfig();
+    }
+
+
+
+
+
+
+
+
+    /**
+     * 获取插件源资源文件夹
+     * @param string $name 插件名称
+     * @return  string
+     */
+    public static function getSourceAssetsDir($name)
+    {
+        return app()->getRootPath() . 'addons/' . $name . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * 获取插件目标资源文件夹
+     * @param string $name 插件名称
+     * @return  string
+     */
+    public static function getDestAssetsDir($name)
+    {
+        $assetsDir = app()->getRootPath() . str_replace("/", DIRECTORY_SEPARATOR, "public/static/addons/{$name}");
+        if (!is_dir($assetsDir)) {
+            mkdir($assetsDir, 0755, true);
+        }
+        return $assetsDir;
+    }
+
+
+    //获取插件目录
+    public static function getAddonsNamePath($name){
+
+        return app()->getRootPath().'addons'.DIRECTORY_SEPARATOR.$name.DIRECTORY_SEPARATOR;
+    }
+
+
+    /**
+     * 获取检测的全局文件夹目录
+     * @return  array
+     */
+    public static function getCheckDirs()
+    {
+        return [
+            'app',
+        ];
+    }
+
+    /**
+     * 获取插件在全局的文件
+     * @param   int $onlyconflict 冲突
+     * @param   string $name 插件名称
+     * @return  array
+     */
+    public  static function getGlobalAddonsFiles($name, $onlyconflict = false)
+    {
+        $list = [];
+        $addonDir = self::getAddonsNamePath($name);
+        // 扫描插件目录是否有覆盖的文件
+        foreach (self::getCheckDirs() as $k => $dir) {
+            $checkDir = app()->getRootPath() . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR;
+            if (!is_dir($checkDir))
+                continue;
+            //检测到存在插件外目录
+            if (is_dir($addonDir . $dir)) {
+                //匹配出所有的文件
+                $files = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($addonDir . $dir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST
+                );
+                foreach ($files as $fileinfo) {
+                    if ($fileinfo->isFile()) {
+                        $filePath = $fileinfo->getPathName();
+                        $path = str_replace($addonDir, '', $filePath);
+                        if ($onlyconflict) {
+                            $destPath = app()->getRootPath() . $path;
+                            if (is_file($destPath)) {
+                                if (filesize($filePath) != filesize($destPath) || md5_file($filePath) != md5_file($destPath)) {
+                                    $list[] = $path;
+                                }
+                            }
+                        } else {
+                            $list[] = $path;
+                        }
+                    }
+                }
+            }
+        }
+        return $list;
+    }
+
+
+
+
+    //更新addons 文件；
+    public static function updateAdddonsConfig(){
+        $config = get_addons_autoload_config(true);
+        if ($config['autoload'])
+            return '';
+        $file = app()->getRootPath() . 'config' . DIRECTORY_SEPARATOR . 'addons.php';
+        if (!FileHelper::isWritable($file)) {
+            throw new \Exception("addons.php文件没有写入权限");
+        }
+
+        if ($handle = fopen($file, 'w')) {
+            fwrite($handle, "<?php\n\n" . "return " . var_export($config, TRUE) . ";");
+            fclose($handle);
+        } else {
+            throw new Exception("文件没有写入权限");
+        }
+        return true;
+    }
+    //更新插件状态
+    public static function updateAddonsInfo($name,$state=1){
+        $addonslist  = get_addons_list();
+        $addonslist[$name]['status'] =$state;
+        Cache::set('addonslist',$addonslist);
+
     }
     
 }

@@ -7,6 +7,7 @@ use think\facade\App;
 use think\facade\Config;
 use think\facade\Event;
 use think\facade\Route;
+use think\facade\Cache;
 use think\helper\{
     Str, Arr
 };
@@ -206,7 +207,7 @@ if (!function_exists('get_addons_list')) {
 
     function get_addons_list()
     {   
-        if(!cache('addonslist')){
+        if(! Cache::get('addonslist')){
             $service = new Service(App::instance()); // 获取service 服务
             $addons_path = $service->getAddonsPath(); // 插件列表
             $results = scandir($addons_path);
@@ -229,10 +230,10 @@ if (!function_exists('get_addons_list')) {
                     continue;
                 $info['url'] = (string)addons_url();
                 $list[$name] = $info;
-                cache('addonslist',$list);
+                Cache::set('addonslist',$list);
             }
         }else{
-            $list = cache('addonslist')  ;
+            $list = Cache::get('addonslist')  ;
         }
         
         return $list;
